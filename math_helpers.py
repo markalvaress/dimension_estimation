@@ -9,39 +9,16 @@ def noisy_sphere(d: int, r: float, s: float, m: int, seed: int = None) -> np.nda
     if d == 0:
         # the 0 sphere is just {0,1}, so sample these discretely
         pts = r * rng.integers(0,2, (m,1))
-    elif d == 1:
-        # uniformly sample a theta and then parametrise as (r*cos(theta), r*sin(theta))
-        thetas = rng.uniform(0, 2*np.pi, m)
-        pts = r * np.array([np.cos(thetas), np.sin(thetas)].T)
-    elif d == 2:
-        # uniformly sample theta and phi and parametrise using spherical polars
-        thetas = rng.uniform(0, 2*np.pi, m)
-        phis = rng.uniform(0, np.pi, m)
-        pts = r * np.array([np.sin(phis)*np.cos(thetas), np.sin(phis)*np.sin(thetas), np.cos(phis)]).T
     else:
-        # use the n-dml spherical coordinate system from https://en.wikipedia.org/wiki/N-sphere
-        # if we have d-dml sphere then n = d+1.
-        phis_secondary = rng.uniform(0, np.pi, (m, d-1)) # this is phi_1, ..., phi_{d-1} 
-        phis_main = rng.uniform(0, 2*np.pi, m) # similar to thetas before. This is phi_{n-1} (phi_d) in the wiki article 
-
-        pts = np.zeros((m, d+1))
-
-        # convert the the coordinates in R^d into coordinates on the sphere embedded in R^{d+1}
-        for i in range(d-1):
-            pts[:, i] = r * np.cos(phis_secondary[:, i])
-            for j in range(i):
-                pts[:, i] *= np.sin(phis_secondary[:, j])
-
-        # the last two points are slightly different
-        pts[:, d-1] = r * np.cos(phis_main)
-        pts[:, d] = r * np.sin(phis_main)
-        for j in range(d-1):
-                pts[:, d-1] *= np.sin(phis_secondary[:, j])
-                pts[:, d] *= np.sin(phis_secondary[:, j])
+        #basic idea: randomly sample points from a D-dimensional NORMAL distribution (since normal distribution is spherically symmetric, whereas uniform would lead to overconcentration in corners), then push them onto the unit ball, then add some noise
+        pts = rng.normal(0, 1, (m, d+1))
+        norms = np.linalg.norm(pts, axis = 1)
+        for i in range(m):
+            pts[i] = r * pts[i] / norms[i]
 
     # we use an s/3 here as the SD so that virtually all noise (99.7%) will be within 3*sd = s of 0.
-    noise = rng.normal(0, s/3, (m, d+1)) 
-    np.clip(noise, -s, s, out = noise) # Bound the noise to strictly within +/- s.
+    noise = rng.normal(0, s/3, (m, d+1))
+    np.clip(noise, -s, s, out = noise) #Bound the noise to strictly within +/- s.
     pts += noise
 
     return pts
@@ -77,6 +54,55 @@ def calculate_measure_concentration_uniform_sphere(r: float, R: float, sphere_su
     Phi = 1/sphere_surf_area * (R/r_minus)**d * integral[0]
     return Phi
 
+# CODE GRAVEYARD ----------------------
+
+## This is just plain wrong for dimension >2. But I'm keeping it in here in case it could have been useful if tweaked a bit. 
+# def noisy_sphere(d: int, r: float, s: float, m: int, seed: int = None) -> np.ndarray:
+#     """Samples m points uniformly from a d-dml sphere (in R^{d+1}) of radius r with normally distributed noise strictly bounded in magnitude by s."""
+#     rng = np.random.default_rng(seed = seed)
+
+#     if d == 0:
+#         # the 0 sphere is just {0,1}, so sample these discretely
+#         pts = r * rng.integers(0,2, (m,1))
+#     elif d == 1:
+#         # uniformly sample a theta and then parametrise as (r*cos(theta), r*sin(theta))
+#         thetas = rng.uniform(0, 2*np.pi, m)
+#         pts = r * np.array([np.cos(thetas), np.sin(thetas)].T)
+#     elif d == 2:
+#         # uniformly sample theta and phi and parametrise using spherical polars
+#         thetas = rng.uniform(0, 2*np.pi, m)
+#         phis = rng.uniform(0, np.pi, m)
+#         pts = r * np.array([np.sin(phis)*np.cos(thetas), np.sin(phis)*np.sin(thetas), np.cos(phis)]).T
+#     else:
+#         # use the n-dml spherical coordinate system from https://en.wikipedia.org/wiki/N-sphere
+#         # if we have d-dml sphere then n = d+1.
+#         phis_secondary = rng.uniform(0, np.pi, (m, d-1)) # this is phi_1, ..., phi_{d-1} 
+#         phis_main = rng.uniform(0, 2*np.pi, m) # similar to thetas before. This is phi_{n-1} (phi_d) in the wiki article 
+
+#         pts = np.zeros((m, d+1))
+
+#         # convert the the coordinates in R^d into coordinates on the sphere embedded in R^{d+1}
+#         for i in range(d-1):
+#             pts[:, i] = r * np.cos(phis_secondary[:, i])
+#             for j in range(i):
+#                 pts[:, i] *= np.sin(phis_secondary[:, j])
+
+#         # the last two points are slightly different
+#         pts[:, d-1] = r * np.cos(phis_main)
+#         pts[:, d] = r * np.sin(phis_main)
+#         for j in range(d-1):
+#                 pts[:, d-1] *= np.sin(phis_secondary[:, j])
+#                 pts[:, d] *= np.sin(phis_secondary[:, j])
+
+#     # we use an s/3 here as the SD so that virtually all noise (99.7%) will be within 3*sd = s of 0.
+#     noise = rng.normal(0, s/3, (m, d+1)) 
+#     np.clip(noise, -s, s, out = noise) # Bound the noise to strictly within +/- s.
+#     pts += noise
+
+#     return pts
+
+
+## This is no longer needed as we found an analytic solution
 # def find_geodesic_distance_sphere(p1: np.ndarray, p2: np.ndarray, r: float) -> float:
 #     """Finds the geodesic distance between two points on a sphere in arbitrary dimension of radius r.
 
@@ -99,5 +125,5 @@ def calculate_measure_concentration_uniform_sphere(r: float, R: float, sphere_su
 #     if theta < 0:
 #         raise ValueError(f"Points {p1=} and {p2=} resulted in a negative angle between them.")
 #     d_geod = theta*r
-
-    return d_geod
+# 
+#     return d_geod

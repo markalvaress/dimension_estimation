@@ -87,9 +87,12 @@ def tgt_and_dim_estimates(X: np.ndarray, r: float, eta: float) -> List[Tuple[int
         List[Tuple[int, int, np.ndarray]]: A list of size len(X). For each point contains a tuple with i, the index of the data point;
         d, the estimated intrinsic dimension; and T, a matrix with rows representing d points in R^D, and the span of these is the estimated tangent space.
     """
-    num_processes = multiprocessing.cpu_count()
-    with Pool(num_processes) as p:
-        results = p.map(lambda i: tgt_and_dim_estimate_1point(X, i, r, eta), range(len(X)))
+    ## this was the attempt to parallelise but it didn't work - I'd need to call it as a module.
+    # num_processes = multiprocessing.cpu_count()
+    # with Pool(num_processes) as p:
+    #     results = p.map(lambda i: tgt_and_dim_estimate_1point(X, i, r, eta), range(len(X)))
+
+    results = [tgt_and_dim_estimate_1point(X, i, r, eta) for i in range(len(X))]
 
     return results
 
