@@ -1,6 +1,6 @@
 import numpy as np
 import math
-
+import scipy as sp
 
 def noisy_sphere(d: int, r: float, s: float, m: int, seed: int = None) -> np.ndarray:
     """Samples m points uniformly from a d-dml sphere (in R^{d+1}) of radius r with normally distributed noise strictly bounded in magnitude by s."""
@@ -48,14 +48,34 @@ def noisy_sphere(d: int, r: float, s: float, m: int, seed: int = None) -> np.nda
 
 def ball_volume(D: int, r: float = 1) -> float:
     """Calculate the volume of the ball of radius r in D dimensions."""
-    w_d = math.pi**(D/2) / math.gamma(D/2 + 1) * r^D
+    w_d = math.pi**(D/2) / math.gamma(D/2 + 1) * r**D
     return w_d
 
-def sphere_surface_area(d: int, r: float = 1) -> float:
-    """Calculate the full surface area of the d-dml sphere (sitting in R^{d+1}) of radius r."""
+def sphere_surface_area(d: int, R: float = 1) -> float:
+    """Calculate the full surface area of the d-dml sphere (sitting in R^{d+1}) of radius R."""
     n = d+1 # to match the wiki formulas
-    sa = n*math.pi**(n/2) / math.gamma(1 + n/2) * r^d
+    sa = n*math.pi**(n/2) / math.gamma(1 + n/2) * R**d
     return sa
+
+def calculate_measure_concentration_uniform_sphere(r: float, R: float, sphere_surf_area: float, d: int, tau: float, s: float) -> float:
+    """Calculate the 'local concentration' of mu_0 on a d-dimensional sphere of radius R, using balls of radius r.
+
+    Args:
+        r (float): _description_
+        R (float): _description_
+        sphere_surf_area (float): _description_
+        d (int): _description_
+        tau (float): _description_
+        s (float): _description_
+
+    Returns:
+        float: _description_
+    """
+    r_minus = r*(1 - r**2/(4*tau**2)) - 2*s
+    phi_star = np.arcsin(r_minus/(2*R))
+    integral = sp.integrate.quad(lambda phi: np.sin(phi)**(d-1), 0, phi_star)
+    Phi = 1/sphere_surf_area * (R/r_minus)**d * integral[0]
+    return Phi
 
 # def find_geodesic_distance_sphere(p1: np.ndarray, p2: np.ndarray, r: float) -> float:
 #     """Finds the geodesic distance between two points on a sphere in arbitrary dimension of radius r.
