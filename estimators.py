@@ -43,7 +43,7 @@ def Thr(L: np.ndarray, eta: float) -> int:
     raise Exception("couldn't find a threshold k value")
     
 
-def tgt_and_dim_estimate_1point(X: np.ndarray, i: int, r: float, eta: float) -> Tuple[int, int, np.ndarray]:
+def tgt_and_dim_estimate_1point(i: int, X: np.ndarray, r: float, eta: float, verbose: float = False) -> Tuple[int, int, np.ndarray]:
     """Estimate the tangent space and the intrinsic dimension of X using the neighbourhood of the i'th point.
 
     Args:
@@ -51,15 +51,22 @@ def tgt_and_dim_estimate_1point(X: np.ndarray, i: int, r: float, eta: float) -> 
         i (int): The index of the point you want to compute the local estimates around
         r (float): The radius to use for local estimation of dimension
         eta (float): Threshold parameter for dimension estimation
+        verbose (bool): If verbose, will print out a message every if i is a multiple of 100.
 
     Returns:
         Tuple[int, int, np.ndarray]: Returns i, the index of the data point; d, the estimated intrinsic dimension; and T, a matrix with rows
         representing d points in R^D, and the span of these is the estimated tangent space.
     """
+    if verbose and i % 100 == 0:
+        print("Estimating dimension and tangent space for point ", i)
+
     m_X, D = X.shape
     
     # take only points within the ball of radius r centred on the pt
     W = open_ball_subset(X, i, r)
+    if W is None:
+        # i.e. the open ball is empty. Then just "guess" the dimension as 0.
+        return i, 0, None
 
     m = W.shape[0]
 
@@ -75,13 +82,14 @@ def tgt_and_dim_estimate_1point(X: np.ndarray, i: int, r: float, eta: float) -> 
 
     return i, d_hat, U[:d_hat]
 
-def tgt_and_dim_estimates(X: np.ndarray, r: float, eta: float) -> List[Tuple[int, int, np.ndarray]]:
+def tgt_and_dim_estimates(X: np.ndarray, r: float, eta: float, verbose: bool = False) -> List[Tuple[int, int, np.ndarray]]:
     """Estimate the intrinsic dimension and the tangent space at every single point in X.
 
     Args:
         X (np.ndarray): An m x D matrix, representing m points in R^D (each row is a point)
         r (float): The radius to use for local estimation of dimension
         eta (float): Threshold parameter for dimension estimation
+        verbose (bool): If verbose, will print out a message every 100 points 
 
     Returns:
         List[Tuple[int, int, np.ndarray]]: A list of size len(X). For each point contains a tuple with i, the index of the data point;
@@ -92,7 +100,7 @@ def tgt_and_dim_estimates(X: np.ndarray, r: float, eta: float) -> List[Tuple[int
     # with Pool(num_processes) as p:
     #     results = p.map(lambda i: tgt_and_dim_estimate_1point(X, i, r, eta), range(len(X)))
 
-    results = [tgt_and_dim_estimate_1point(X, i, r, eta) for i in range(len(X))]
+    results = [tgt_and_dim_estimate_1point(i, X, r, eta, verbose) for i in range(len(X))]
 
     return results
 

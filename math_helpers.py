@@ -30,8 +30,8 @@ def ball_volume(D: int, r: float = 1) -> float:
 
 def sphere_surface_area(d: int, R: float = 1) -> float:
     """Calculate the full surface area of the d-dml sphere (sitting in R^{d+1}) of radius R."""
-    n = d+1 # to match the wiki formulas
-    sa = n*math.pi**(n/2) / math.gamma(1 + n/2) * R**d
+    n = d+1
+    sa = 2*math.pi**(n/2) / math.gamma(n/2) * R**d
     return sa
 
 def calculate_measure_concentration_uniform_sphere(r: float, R: float, sphere_surf_area: float, d: int, tau: float, s: float) -> float:
