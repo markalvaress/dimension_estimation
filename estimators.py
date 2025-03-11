@@ -43,7 +43,7 @@ def Thr(L: np.ndarray, eta: float) -> int:
     raise Exception("couldn't find a threshold k value")
     
 
-def tgt_and_dim_estimate_1point(i: int, X: np.ndarray, r: float, eta: float, verbose: float = False) -> Tuple[int, int, np.ndarray]:
+def tgt_and_dim_estimate_1point(i: int, X: np.ndarray, r: float, eta: float, dim_only: bool = False,  verbose: bool = False):
     """Estimate the tangent space and the intrinsic dimension of X using the neighbourhood of the i'th point.
 
     Args:
@@ -51,11 +51,14 @@ def tgt_and_dim_estimate_1point(i: int, X: np.ndarray, r: float, eta: float, ver
         i (int): The index of the point you want to compute the local estimates around
         r (float): The radius to use for local estimation of dimension
         eta (float): Threshold parameter for dimension estimation
+        dim_only (bool): Whether to return only dimensions
         verbose (bool): If verbose, will print out a message every if i is a multiple of 100.
 
     Returns:
-        Tuple[int, int, np.ndarray]: Returns i, the index of the data point; d, the estimated intrinsic dimension; and T, a matrix with rows
+        dim_only = False => Tuple[int, int, np.ndarray]: Returns i, the index of the data point; d, the estimated intrinsic dimension; and T, a matrix with rows
         representing d points in R^D, and the span of these is the estimated tangent space.
+
+        dim_only = True => int: d, the estimated intrinsic dimension 
     """
     if verbose and i % 100 == 0:
         print("Estimating dimension and tangent space for point ", i)
@@ -80,7 +83,10 @@ def tgt_and_dim_estimate_1point(i: int, X: np.ndarray, r: float, eta: float, ver
     # estimated intrinsic dimension
     d_hat = Thr(L, eta)
 
-    return i, d_hat, U[:d_hat]
+    if dim_only:
+        return d_hat
+    else:
+        return i, d_hat, U[:d_hat]
 
 def tgt_and_dim_estimates(X: np.ndarray, r: float, eta: float, verbose: bool = False) -> List[Tuple[int, int, np.ndarray]]:
     """Estimate the intrinsic dimension and the tangent space at every single point in X.
@@ -100,7 +106,7 @@ def tgt_and_dim_estimates(X: np.ndarray, r: float, eta: float, verbose: bool = F
     # with Pool(num_processes) as p:
     #     results = p.map(lambda i: tgt_and_dim_estimate_1point(X, i, r, eta), range(len(X)))
 
-    results = [tgt_and_dim_estimate_1point(i, X, r, eta, verbose) for i in range(len(X))]
+    results = [tgt_and_dim_estimate_1point(i, X, r, eta, False, verbose) for i in range(len(X))]
 
     return results
 

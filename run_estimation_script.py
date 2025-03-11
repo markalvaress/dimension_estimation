@@ -4,15 +4,13 @@ import sys
 import numpy as np
 from functools import partial
 
-def dim_estim_1pt(i):
-    estimators.tgt_and_dim_estimate_1point(X, i, r, eta, verbose)[1]
-
-
 if __name__ == "__main__":
+    # Computes dimension estimates at every point in a point cloud stored in a matrix.
+
     nargs = len(sys.argv)
 
     if nargs < 5:
-        print("Usage: ", sys.argv[0], " <matrix_in_filename.npy> <r> <eta> <output_filename.npy> [<verbose>]")
+        print("Usage: ", sys.argv[0], " <matrix_input_filename.npy> <r> <eta> <output_filename.npy> [<verbose>]")
     else:
         global X, r, eta, output_filename, verbose
 
@@ -33,9 +31,9 @@ if __name__ == "__main__":
         if verbose:
             print(f"Using {n_processes=}")
 
-        with mp.Pool(n_processes) as p: # can i have more?
-            dim_estims = p.map(partial(estimators.tgt_and_dim_estimate_1point, X=X, r=r, eta=eta, verbose=verbose), range(m))
+        with mp.Pool(n_processes) as p:
+            dim_estims = p.map(partial(estimators.tgt_and_dim_estimate_1point, X=X, r=r, eta=eta, dim_only = True, verbose=verbose), range(m))
 
-        np.save(output_filename, np.array(dim_estims))
+        np.save(output_filename, np.array(list(dim_estims)))
         print("Dimension estimates computed and saved to ", output_filename)
 

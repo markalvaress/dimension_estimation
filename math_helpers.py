@@ -2,19 +2,19 @@ import numpy as np
 import math
 import scipy as sp
 
-def noisy_sphere(d: int, r: float, s: float, m: int, seed: int = None) -> np.ndarray:
-    """Samples m points uniformly from a d-dml sphere (in R^{d+1}) of radius r with normally distributed noise strictly bounded in magnitude by s."""
+def noisy_sphere(d: int, R: float, s: float, m: int, seed: int = None) -> np.ndarray:
+    """Samples m points uniformly from a d-dml sphere (in R^{d+1}) of radius R with normally distributed noise strictly bounded in magnitude by s."""
     rng = np.random.default_rng(seed = seed)
 
     if d == 0:
         # the 0 sphere is just {0,1}, so sample these discretely
-        pts = r * rng.integers(0,2, (m,1))
+        pts = R * rng.integers(0,2, (m,1))
     else:
         #basic idea: randomly sample points from a D-dimensional NORMAL distribution (since normal distribution is spherically symmetric, whereas uniform would lead to overconcentration in corners), then push them onto the unit ball, then add some noise
         pts = rng.normal(0, 1, (m, d+1))
         norms = np.linalg.norm(pts, axis = 1)
         for i in range(m):
-            pts[i] = r * pts[i] / norms[i]
+            pts[i] = R * pts[i] / norms[i]
 
     # we use an s/3 here as the SD so that virtually all noise (99.7%) will be within 3*sd = s of 0.
     noise = rng.normal(0, s/3, (m, d+1))
